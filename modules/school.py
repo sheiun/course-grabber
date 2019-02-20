@@ -9,6 +9,7 @@ import requests
 from lxml import etree
 from PIL import Image
 
+from helpers.logger import log
 from helpers.ntust.code import recognize
 
 from .base import AbstractSchool
@@ -77,6 +78,7 @@ class NTUST(AbstractSchool):
         remove(fp)
         return text
 
+    @log
     def login(self, data):
         self.login_data = data
         data["code_box"] = self.verification_code
@@ -107,6 +109,7 @@ class NTUST(AbstractSchool):
         return restrict > now
 
     @staticmethod
+    @log
     def is_available_by_query(course_id):
         data = requests.post(NTUST.QUERY_URL, data={'semester': '1072',
                                                     'course_no': course_id,
@@ -125,13 +128,12 @@ class NTUST(AbstractSchool):
         self.session.post(
             NTUST.CHECK_URL, data={'Button1': '我已了解上述提醒! 進入選課系統', '__VIEWSTATE':  NTUST.VIEW_STATE})
 
+    @log
     def choose(self, course_id):
         """
         :course_id 課程代碼
         :return 是否選到課
         """
-        print(f'{course_id} 選課中...')
-
         res = self.session.post(NTUST.CHOOSE_URL, data={
             'courseno': course_id, 'B_add': '加選', '__VIEWSTATE': NTUST.VIEW_STATE})
         if res.url == NTUST.ERROR_URL:
@@ -160,9 +162,9 @@ class NTUST(AbstractSchool):
         :用 Thread 實現
         """
 
+        @log
         def _thread(arg):
             while True:
-                print(f'{arg["course_id"]} is running...')
                 if arg["listen"]:
                     if arg["cls"].is_available_by_query(arg["course_id"]):
                         self.login(self.login_data)
@@ -178,11 +180,13 @@ class NTUST(AbstractSchool):
                                              'listen': listen, 'delay': delay}, ))
         self.task_list.append(task)
         task.start()
+		
+        """
+        if listen:
+            if self.is_availiabe(course_id):
+                self.choose(course_id)
+        else:
+            self.choose(course_id)
 
-        # if listen:
-        #     if self.is_availiabe(course_id):
-        #         self.choose(course_id)
-        # else:
-        #     self.choose(course_id)
-
-        # sleep(delay)
+        sleep(delay)
+		"""
