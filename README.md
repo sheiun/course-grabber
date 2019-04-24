@@ -2,7 +2,7 @@
 
 ## Usage
 
-Wirte a open main.py in root folder
+Wirte follow codes in main.py in project root folder
 
 ```python
 from modules.school import NTUST
